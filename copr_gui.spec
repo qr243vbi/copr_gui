@@ -34,7 +34,7 @@ A Qt-based graphical user interface for managing COPR instances.
 %pyproject_wheel
 
 %install
-install -Dm favicon.ico %{buildroot}%{_iconsdir}/hicolor/256x256/apps/copr_gui.png
+install -Dm644 favicon.ico %{buildroot}%{_iconsdir}/hicolor/256x256/apps/copr_gui.png
 install -Dm644 copr-gui.desktop %{buildroot}%{_datadir}/applications/copr-gui.desktop
 %pyproject_install
 %pyproject_save_files copr_gui copr_gui_source_types
