@@ -35,8 +35,8 @@ A Qt-based graphical user interface for managing COPR instances.
 
 %install
 %pyproject_install
-
 %pyproject_save_files copr_gui copr_gui_source_types
+
 
 %check
 %pyproject_check_import
@@ -47,7 +47,7 @@ A Qt-based graphical user interface for managing COPR instances.
 
 %changelog
 * Fri Sep 18 2026 qr243vbi <qr243vbi@atomicmail.io> - 0.1.1-1
-- Bugfixes and improvements 
+- Bugfixes and improvements
 
 * Fri Sep 18 2026 qr243vbi <qr243vbi@atomicmail.io> - 0.1.0-1
 - Initial package
