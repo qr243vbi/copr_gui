@@ -1,6 +1,6 @@
 Name:           copr-gui
 %define pypi_name copr_gui
-Version:        0.1.1
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        GUI for managing COPR instances
 
@@ -34,6 +34,7 @@ A Qt-based graphical user interface for managing COPR instances.
 %pyproject_wheel
 
 %install
+install -Dm favicon.ico %{buildroot}%{_iconsdir}/hicolor/256x256/apps/copr_gui.png
 %pyproject_install
 %pyproject_save_files copr_gui copr_gui_source_types
 
@@ -44,6 +45,7 @@ A Qt-based graphical user interface for managing COPR instances.
 %files -f %{pyproject_files}
 %license LICENSE
 %{_bindir}/copr-gui
+%{_iconsdir}/hicolor/256x256/apps/copr_gui.png
 
 %changelog
 * Fri Sep 18 2026 qr243vbi <qr243vbi@atomicmail.io> - 0.1.1-1

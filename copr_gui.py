@@ -6548,12 +6548,14 @@ class LargeLogViewerWindow(QMainWindow):
 # ============================================================
 # Main
 # ============================================================
+from PyQt6.QtCore import QStandardPaths
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication
 def main():
     app = QApplication(sys.argv)
-
+    app.setWindowIcon(QIcon.fromTheme("copr"))
     window = CoprWindow()
     window.show()
-
     sys.exit(app.exec())
 
 
