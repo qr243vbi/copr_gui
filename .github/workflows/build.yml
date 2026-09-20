@@ -1,0 +1,122 @@
+name: Release
+
+on:
+  push:
+    paths:
+      - version.txt
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(tr -d '[:space:]' < version.txt)"
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $VERSION"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Check tag
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists."
+            exit 1
+          fi
+
+      - name: Update setup.py
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          version = Path("version.txt").read_text().strip()
+          path = Path("setup.py")
+          text = path.read_text()
+
+          text, count = re.subn(
+              r'(?m)^(\s*version\s*=\s*)["\'][^"\']+["\']',
+              rf'\g<1>"{version}"',
+              text,
+              count=1,
+          )
+
+          if count != 1:
+              raise SystemExit("Could not find version= in setup.py")
+
+          path.write_text(text)
+
+      - name: Update RPM spec
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          version = Path("version.txt").read_text().strip()
+          path = Path("copr-gui.spec")
+          text = path.read_text()
+
+          text, count = re.subn(
+              r'(?m)^Version:\s*.*$',
+              f'Version:        {version}',
+              text,
+              count=1,
+          )
+
+          if count != 1:
+              raise SystemExit("Could not find Version: in copr-gui.spec")
+
+          path.write_text(text)
+
+      - name: Commit version changes
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add version.txt setup.py copr-gui.spec
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Release ${VERSION}"
+            git push origin HEAD:main
+          fi
+
+      - name: Create tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$VERSION" \
+            --title "copr-gui ${VERSION}" \
+            --generate-notes
