@@ -48,6 +48,9 @@ install -Dm favicon.ico %{buildroot}%{_iconsdir}/hicolor/256x256/apps/copr_gui.p
 %{_iconsdir}/hicolor/256x256/apps/copr_gui.png
 
 %changelog
+* Sun Sep 20 2026 qr243vbi <qr243vbi@atomicmail.io> - 0.1.3-1
+- Added ability to look for build chroots
+
 * Fri Sep 18 2026 qr243vbi <qr243vbi@atomicmail.io> - 0.1.1-1
 - Bugfixes and improvements
 
