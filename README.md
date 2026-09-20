@@ -4,6 +4,12 @@ A Qt-based graphical user interface for managing [COPR](https://copr.fedorainfra
 
 `copr-gui` provides a desktop interface for working with COPR instances without having to perform common project-management tasks from the command line or web interface.
 
+## Installation
+```bash
+sudo dnf copr enable qr243vbi/NewProject
+sudo dnf install copr-gui
+```
+
 ## Features
 
 - Connect to a COPR instance using API credentials
