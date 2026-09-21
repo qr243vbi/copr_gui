@@ -36,7 +36,6 @@ jobs:
                   "copr_url": "https://copr.fedorainfracloud.org",
               }
           )
-          owner, project = "${COPR_PROJECT}".split('/')
-          result = client.build_proxy.create_from_scm(owner, project, "${REPOSITORY}")
+          result = client.build_proxy.create_from_scm("${COPR_USERNAME}", "${COPR_PROJECT}", "${REPOSITORY}")
           print(result)
           PY
