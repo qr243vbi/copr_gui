@@ -31,6 +31,7 @@ jobs:
 
       - name: Trigger build
         run: |
+          export PATH=$PATH:$HOME/.local/bin:$HOME/.bin:$HOME/bin
           copr build-package \
             ${{ secrets.PROJECT }} \
             copr-gui
