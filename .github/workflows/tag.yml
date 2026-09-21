@@ -24,7 +24,7 @@ jobs:
           COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
           COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
           COPR_PROJECT: ${{ secrets.PROJECT }}
-          REPOSITORY: ${{ github.repository }}
+          REPOSITORY: ${{ github.server_url }}/${{ github.repository }}.git
         run: |
           python3 - <<PY
           from copr.v3 import Client
