@@ -1,0 +1,36 @@
+name: Publish COPR Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  copr-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install COPR CLI
+        run: |
+          python3 -m pip install copr-cli
+
+      - name: Configure COPR
+        run: |
+          mkdir -p ~/.config
+
+          cat > ~/.config/copr <<EOF
+          [copr]
+          login = ${{ secrets.COPR_LOGIN }}
+          username = ${{ secrets.COPR_USERNAME }}
+          token = ${{ secrets.COPR_TOKEN }}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+
+          chmod 600 ~/.config/copr
+
+      - name: Trigger build
+        run: |
+          copr build-package \
+            ${{ secrets.PROJECT }} \
+            copr-gui
