@@ -3698,6 +3698,7 @@ from PyQt6.QtQuickWidgets import QQuickWidget
 from PyQt6.QtCore import QMetaObject, Q_RETURN_ARG, QVariant, QUrl, Q_ARG
 
 
+
 class BuildType(QMainWindow):
     def get_build_options(self):
         window = BuildOptions(self.client, self)
@@ -3718,7 +3719,7 @@ class BuildType(QMainWindow):
         super().__init__(parent, *args, **kwargs)
 
         self.widgets = {}
-        
+
         self.combo = QComboBox()
         self.stack = QStackedWidget()
 
@@ -3733,7 +3734,7 @@ class BuildType(QMainWindow):
         )
         self.qml_ids = {}
         qml_current_id = 0
-        
+
         directory = Path(__file__).resolve().parent / "copr_gui_source_types"
 
         for filename in os.listdir(directory):
@@ -3770,8 +3771,9 @@ class BuildType(QMainWindow):
                 else:
                     if not ('B' in spl):
                         continue
-            
-            name = qml.rootObject().property("name") or identifier
+
+            root = qml.rootObject()
+            name = root.property("name") or identifier
             self.qml_ids[identifier] = qml_current_id
             qml_current_id = qml_current_id + 1
 
@@ -3807,21 +3809,20 @@ class BuildType(QMainWindow):
 
         self.layout.addWidget(self.chroots_label)
         self.layout.addWidget(self.combo)
+
         self.layout.addWidget(self.stack, 1)
 
         self.setCentralWidget(self.central)
-
         self.combo.currentIndexChanged.connect(
             self.stack.setCurrentIndex
         )
-
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
             | QDialogButtonBox.StandardButton.Cancel
         )
         self.layout.addWidget(self.buttons)
 
-        self.resize(800, 600)
+        self.resize(800, 650)
 
     def fill_package_data(self, data):
         data_name = data.get('name', None) or ''
@@ -3835,12 +3836,12 @@ class BuildType(QMainWindow):
         current_widget = self.stack.currentWidget()
         if not isinstance(current_widget, QQuickWidget):
             return
-            
+
         qml_root = current_widget.rootObject()
         if qml_root:
             success = QMetaObject.invokeMethod(
-                qml_root, 
-                "setDict", 
+                qml_root,
+                "setDict",
                 Q_ARG(QVariant, data.source_dict)
             )
             method_index = qml_root.metaObject().indexOfMethod(
@@ -3849,7 +3850,7 @@ class BuildType(QMainWindow):
                 meta_method = qml_root.metaObject().method(
                     method_index)
                 meta_method.invoke(
-                    qml_root, 
+                    qml_root,
                     Q_ARG(QVariant, data_name)
                 )
             return not not success
@@ -3861,11 +3862,11 @@ class BuildType(QMainWindow):
         qml_root = current_widget.rootObject()
         if qml_root:
             data_dict = QMetaObject.invokeMethod(
-                qml_root, 
-                "getDict", 
+                qml_root,
+                "getDict",
                 Q_RETURN_ARG(QVariant)
             )
-            
+
             if data_dict is not None:
                 source_type = qml_root.property("type")
                 if source_type is None:
@@ -3879,7 +3880,7 @@ class BuildType(QMainWindow):
                     data_dict["name"] = self.name.text()
                 data_dict["owner"] = owner
                 data_dict["project"] = project
-                if self.build_options is not None: 
+                if self.build_options is not None:
                     data_dict["buildopts"] = self.build_options
                 return data_dict
             else:
