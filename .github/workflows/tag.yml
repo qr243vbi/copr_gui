@@ -11,27 +11,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install COPR CLI
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install COPR Python library
         run: |
-          python3 -m pip install copr-cli
+          python3 -m pip install --user copr
 
-      - name: Configure COPR
+      - name: Trigger COPR build
+        env:
+          COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
+          COPR_PROJECT: ${{ secrets.PROJECT }}
         run: |
-          mkdir -p ~/.config
+          python3 - <<'PY'
+          from copr.v3 import Client
 
-          cat > ~/.config/copr <<EOF
-          [copr]
-          login = ${{ secrets.COPR_LOGIN }}
-          username = ${{ secrets.COPR_USERNAME }}
-          token = ${{ secrets.COPR_TOKEN }}
-          copr_url = https://copr.fedorainfracloud.org
-          EOF
+          client = Client.create_from_config(
+              {
+                  "login": "${COPR_LOGIN}",
+                  "username": "${COPR_USERNAME}",
+                  "token": "${COPR_TOKEN}",
+                  "copr_url": "https://copr.fedorainfracloud.org",
+              }
+          )
 
-          chmod 600 ~/.config/copr
+          project = "${COPR_PROJECT}"
 
-      - name: Trigger build
-        run: |
-          export PATH=$PATH:$HOME/.local/bin:$HOME/.bin:$HOME/bin
-          copr build-package \
-            ${{ secrets.PROJECT }} \
-            copr-gui
+          result = client.build_package(
+              project,
+              "copr-gui",
+          )
+
+          print(result)
+          PY
