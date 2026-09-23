@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="copr-gui",
-    version="0.1.5",
+    version="0.1.6",
 
     py_modules=["copr_gui"],
 
