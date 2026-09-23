@@ -1595,7 +1595,7 @@ class CoprWindow(QWidget):
         start_new_project_func(self, name, chroots)
 
     def new_project(self, name, chroots):
-        project = self.client.project_proxy.add(self.client.base_proxy.auth_username(), name, chroots)
+        project = self.client.project_proxy.add(self.client.base_proxy.auth_username(), name, chroots, persistent=True)
         card = self.create_project_card(
             project
         )
@@ -3977,7 +3977,7 @@ class BuildOptions(QDialog):
         layout.addWidget(buttons)
 
     def set_values(self, values):
-        self.timeout.setValue(int(values.get("timeout", None) or None))
+        self.timeout.setValue(int(values.get("timeout", 180000) or 180000))
         self.chroots.set_chroots(values.get("chroots", []) or [])
         self.background.setChecked(bool(values.get("background", False)))
         self.bootstrap.setCurrentText(values.get("bootstrap", "") or "")
