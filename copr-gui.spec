@@ -1,6 +1,6 @@
 Name:           copr-gui
 %define pypi_name copr_gui
-Version:        0.1.7
+Version:        0.1.7.1
 Release:        1%{?dist}
 Summary:        GUI for managing COPR instances
 
