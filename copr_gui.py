@@ -3619,8 +3619,10 @@ class BuildWindow(QMainWindow):
             ChrootWidget._show_json(self, builds)
 
 def CoprViewBuilds(self, build):
-    self.build_window = BuildWindow(self, build.id)
-    self.build_window.show()
+    buildid = build.get("id", 0) or 0
+    if buildid:
+        self.build_window = BuildWindow(self, buildid)
+        self.build_window.show()
 
 
 # ============================================================
