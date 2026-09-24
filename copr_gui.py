@@ -1886,7 +1886,8 @@ class ProjectPackagesFrame(QFrame):
             EDIT_ACTION: "Edit",
             BUILD_ACTION: "Build",
             DELETE_ACTION: "Delete",
-            VIEW_JSON_ACTION: "View JSON"
+            VIEW_JSON_ACTION: "View JSON",
+            VIEW_BUILD_ACTION: "View build"
         }, action = self.copr_action)
         layout.addWidget(self.view, 1)
 
@@ -2284,9 +2285,13 @@ def CoprAction(self, data, action, section, finish_job = None):
         )
     elif action == VIEW_BUILD_ACTION:
         if len(data) > 0:
-            CoprViewBuilds(self, data[0])
+            if section == BUILD_SECTION:
+                CoprViewBuilds(self, data[0])
+            elif section == PACKAGE_SECTION:
+                CoprViewBuilds(self, (data[0].get("builds", {
+                        }) or {}).get("latest", {}) or {})
             return
-    elif action == NEW_ACTION:
+    elif action == NEW_ACTION: 
         if section == BUILD_SECTION:
             Worker = AddBuildWorker
         elif section == PACKAGE_SECTION:
