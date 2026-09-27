@@ -68,24 +68,12 @@ class FetchChrootWorker(QObject):
 
 
 def FetchChroot(client, chroots_edit):
-    thread = QThread(chroots_edit)
     worker = FetchChrootWorker(client)
-    worker.moveToThread(thread)
-    thread.started.connect(worker.run)
-    worker.succeeded.connect(
-        chroots_edit.set_available_chroots
+    start_worker(
+        worker,
+        parent=chroots_edit,
+        success=chroots_edit.set_available_chroots,
     )
-    worker.finished.connect(
-        thread.quit
-    )
-    worker.finished.connect(
-        worker.deleteLater
-    )
-    thread.finished.connect(
-        thread.deleteLater
-    )
-    thread.start()
-    add_worker_and_thread(worker, thread)
 
 class ChrootEditor(QWidget):
     def __init__(self, chroots=None, parent=None):
@@ -481,7 +469,7 @@ class ProjectCard(QFrame):
         homepage,
         contact,
     ):
-        update_thread = QThread(self)
+        update_thread = QThread()
         update_worker = UpdateProjectOverviewWorker(
             self.client,
             self.project,
@@ -556,7 +544,7 @@ class ProjectCard(QFrame):
 
     def remove_self(self):
         project = self.project
-        thread = QThread(self)
+        thread = QThread()
         worker = DeleteProjectWorker(
             self.client,
             project,
@@ -1149,39 +1137,24 @@ def edit_chroots_func(self):
 def start_new_project_func(self, name, chroots):
     self.add_button.setEnabled(False)
     self.refresh_button.setEnabled(False)
-    new_project_thread = QThread(self)
+
     new_project_worker = NewProjectWorker(
         self.client,
         self.username,
         name,
         chroots,
     )
-    new_project_worker.moveToThread(
-        new_project_thread
+
+    def on_finished(_=None):
+        self.set_project_enabled(True)
+
+    start_worker(
+        new_project_worker,
+        parent=self,
+        success=self.project_created,
+        error=self.project_creation_failed,
+        finished=on_finished,
     )
-    new_project_thread.started.connect(
-        new_project_worker.run
-    )
-    new_project_worker.created.connect(
-        self.project_created
-    )
-    new_project_worker.failed.connect(
-        self.project_creation_failed
-    )
-    new_project_worker.finished.connect(
-        new_project_thread.quit
-    )
-    new_project_worker.finished.connect(
-        new_project_worker.deleteLater
-    )
-    new_project_thread.finished.connect(
-        new_project_thread.deleteLater
-    )
-    new_project_thread.finished.connect(
-        self.project_creation_failed
-    )
-    new_project_thread.start()
-    add_worker_and_thread(new_project_worker, new_project_thread)
 
 
 # ============================================================
@@ -1416,46 +1389,17 @@ class CoprWindow(QWidget):
         config=None,
         use_config_file=False,
     ):
-        login_thread = QThread()
         login_worker = LoginWorker(
             config=config,
             use_config_file=use_config_file,
         )
 
-        login_worker.moveToThread(
-            login_thread
+        start_worker(
+            login_worker,
+            parent=self,
+            success=self.login_succeeded,
+            error=self.login_failed,
         )
-
-        login_thread.started.connect(
-            login_worker.run
-        )
-
-        login_worker.succeeded.connect(
-            self.login_succeeded
-        )
-
-        login_worker.failed.connect(
-            self.login_failed
-        )
-
-        login_worker.succeeded.connect(
-            login_thread.quit
-        )
-
-        login_worker.failed.connect(
-            login_thread.quit
-        )
-
-        login_thread.finished.connect(
-            login_worker.deleteLater
-        )
-
-        login_thread.finished.connect(
-            login_thread.deleteLater
-        )
-
-        login_thread.start()
-        add_worker_and_thread(login_worker, login_thread)
 
     def login_succeeded(
         self,
@@ -1628,47 +1572,17 @@ class CoprWindow(QWidget):
             "Loading..."
         )
 
-        project_thread = QThread()
-
         project_worker = ProjectWorker(
             self.client,
             self.username,
         )
 
-        project_worker.moveToThread(
-            project_thread
+        start_worker(
+            project_worker,
+            parent=self,
+            success=self.projects_loaded,
+            error=self.projects_failed,
         )
-
-        project_thread.started.connect(
-            project_worker.run
-        )
-
-        project_worker.succeeded.connect(
-            self.projects_loaded
-        )
-
-        project_worker.failed.connect(
-            self.projects_failed
-        )
-
-        project_worker.succeeded.connect(
-            project_thread.quit
-        )
-
-        project_worker.failed.connect(
-            project_thread.quit
-        )
-
-        project_thread.finished.connect(
-            project_worker.deleteLater
-        )
-
-        project_thread.finished.connect(
-            project_thread.deleteLater
-        )
-
-        project_thread.start()
-        add_worker_and_thread(project_worker, project_thread)
 
     def projects_loaded(self, projects):
         if not self.logged_in:
@@ -1888,7 +1802,7 @@ class ProjectPackagesFrame(QFrame):
             DELETE_ACTION: "Delete",
             VIEW_JSON_ACTION: "View JSON",
             VIEW_BUILD_ACTION: "View build"
-        }, action = self.copr_action)
+        }, action = self.copr_action, page_size=25)
         layout.addWidget(self.view, 1)
 
 
@@ -2228,19 +2142,22 @@ class PaginatedTableModel(QAbstractTableModel):
 # ============================================================
 # PaginatedTableView
 # ============================================================
-DEFAULT_PAGE_SIZE=25
-DELETE_ACTION = int(random.random() * 100) + 1
-OPEN_ACTION = DELETE_ACTION + int(random.random() * 100) + 1
-VIEW_JSON_ACTION = OPEN_ACTION + int(random.random() * 100) + 1
-NONE_ACTION = VIEW_JSON_ACTION + int(random.random() * 100) + 1
-BUILD_ACTION = NONE_ACTION + int(random.random() * 100) + 1
-EDIT_ACTION = BUILD_ACTION + int(random.random() * 100) + 1
-ADD_ACTION = EDIT_ACTION + int(random.random() * 100) + 1
-NEW_ACTION = ADD_ACTION + int(random.random() * 100) + 1
-VIEW_BUILD_ACTION = NEW_ACTION + int(random.random() * 100) + 1
-DATA_ROLE = int(random.random() * 100) + Qt.ItemDataRole.UserRole + 1
-BUILD_SECTION = int(random.random() * 100) + 1
-PACKAGE_SECTION = int(random.random() * 100) + BUILD_SECTION + 1
+DEFAULT_PAGE_SIZE = 25
+
+# Stable, explicit action IDs. Using random values here makes Qt action
+# dispatch nondeterministic and hard to debug.
+DELETE_ACTION = 1001
+OPEN_ACTION = 1002
+VIEW_JSON_ACTION = 1003
+NONE_ACTION = 1004
+BUILD_ACTION = 1005
+EDIT_ACTION = 1006
+ADD_ACTION = 1007
+NEW_ACTION = 1008
+VIEW_BUILD_ACTION = 1009
+DATA_ROLE = Qt.ItemDataRole.UserRole + 1
+BUILD_SECTION = 2001
+PACKAGE_SECTION = 2002
 
 from dataclasses import dataclass
 
@@ -2270,7 +2187,35 @@ class WorkerManager:
 worker_manager = WorkerManager()
 add_worker_and_thread = worker_manager.add
 
-def CoprAction(self, data, action, section, finish_job = None):
+
+def start_worker(worker, parent=None, *, success=None, error=None, finished=None):
+    """Run a QObject worker in a background QThread with shared cleanup."""
+    thread = QThread()
+    worker.moveToThread(thread)
+
+    thread.started.connect(worker.run)
+
+    if success is not None and hasattr(worker, "succeeded"):
+        worker.succeeded.connect(success)
+
+    if error is not None and hasattr(worker, "failed"):
+        worker.failed.connect(error)
+
+    if finished is not None and hasattr(worker, "finished"):
+        worker.finished.connect(finished)
+
+    if hasattr(worker, "finished"):
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+
+    thread.finished.connect(thread.deleteLater)
+    thread.start()
+
+    add_worker_and_thread(worker, thread)
+    return thread
+
+
+def CoprAction(self, data, action, section, finish_job = None, finished_job = None):
     Worker = None
     if action == VIEW_JSON_ACTION:
         pretty = json.dumps(
@@ -2306,8 +2251,19 @@ def CoprAction(self, data, action, section, finish_job = None):
                 username = self.client.build_proxy.auth_username()
                 projectname = self.project.name
                 source_dict = window.fetch_qml_data(username, projectname)
-                CoprAction(self, source_dict, NEW_ACTION, BUILD_SECTION, 
-                    finish_job=window.close)
+                window.buttons.setEnabled(False)
+
+                def on_finished():
+                    window.buttons.setEnabled(True)
+
+                CoprAction(
+                    self,
+                    source_dict,
+                    NEW_ACTION,
+                    BUILD_SECTION,
+                    finish_job=window.close,
+                    finished_job=on_finished,
+                )
             window.buttons.accepted.connect(accept)
             window.buttons.rejected.connect(window.close)
             window.show()
@@ -2318,8 +2274,19 @@ def CoprAction(self, data, action, section, finish_job = None):
                 username = self.client.build_proxy.auth_username()
                 projectname = self.project.name
                 source_dict = window.fetch_qml_data(username, projectname)
-                CoprAction(self, source_dict, NEW_ACTION, PACKAGE_SECTION, 
-                    finish_job=window.close)
+                window.buttons.setEnabled(False)
+
+                def on_finished():
+                    window.buttons.setEnabled(True)
+
+                CoprAction(
+                    self,
+                    source_dict,
+                    NEW_ACTION,
+                    PACKAGE_SECTION,
+                    finish_job=window.close,
+                    finished_job=on_finished,
+                )
             window.buttons.accepted.connect(accept)
             window.buttons.rejected.connect(window.close)
             if action == EDIT_ACTION:
@@ -2335,8 +2302,19 @@ def CoprAction(self, data, action, section, finish_job = None):
                 username = self.client.build_proxy.auth_username()
                 projectname = self.project.name
                 source_dict = window.fetch_qml_data(username, projectname)
-                CoprAction(self, source_dict, NEW_ACTION, BUILD_SECTION, 
-                    finish_job=window.close)
+                window.buttons.setEnabled(False)
+
+                def on_finished():
+                    window.buttons.setEnabled(True)
+
+                CoprAction(
+                    self,
+                    source_dict,
+                    NEW_ACTION,
+                    BUILD_SECTION,
+                    finish_job=window.close,
+                    finished_job=on_finished,
+                )
             window.buttons.accepted.connect(accept)
             window.buttons.rejected.connect(window.close)
             if len(data) > 0:
@@ -2353,7 +2331,7 @@ def CoprAction(self, data, action, section, finish_job = None):
         else:
             return
     if None != Worker:
-        thread = QThread(self)
+        thread = QThread()
         worker = Worker(
             self.client,
             data,
@@ -2361,6 +2339,10 @@ def CoprAction(self, data, action, section, finish_job = None):
         if finish_job:
             worker.done.connect(
                 finish_job
+            )
+        if finished_job:
+            worker.finished.connect(
+                finished_job
             )
         worker.moveToThread(
             thread
@@ -2440,18 +2422,18 @@ class CoprTableView(QTableView):
         self.click_row.emit(rows, action_dict.get(id(action), NONE_ACTION))
 
 class PaginatedTableView(QFrame):
-    def __init__(self, data_source, parent=None, menus = {}, action = None):
+    def __init__(self, data_source, parent=None, menus = {}, action = None, page_size=None):
         super().__init__(parent)
 
         self.data_source = data_source
         self.page = 0
         self.menus = menus
-        self.page_size = DEFAULT_PAGE_SIZE
+        self.page_size = page_size or DEFAULT_PAGE_SIZE
 
         self.setup_ui()
 
         self.data_source.setPageSize(
-            DEFAULT_PAGE_SIZE
+            self.page_size
         )
 
         self.table.click_row.connect(action or (lambda *a: None))
@@ -2514,6 +2496,15 @@ class PaginatedTableView(QFrame):
             "Previous"
         )
 
+        self.page_size_label = QLabel("Size:")
+        self.page_size_input = QSpinBox()
+        self.page_size_input.setRange(5, 200)
+        self.page_size_input.setValue(self.page_size)
+        self.page_size_input.setSingleStep(5)
+        self.page_size_input.valueChanged.connect(
+            self.setPageSize
+        )
+
         self.page_label = QLabel()
 
         self.next_button = QPushButton(
@@ -2527,6 +2518,12 @@ class PaginatedTableView(QFrame):
         pagination.addStretch()
         pagination.addWidget(
             self.previous_button
+        )
+        pagination.addWidget(
+            self.page_size_label
+        )
+        pagination.addWidget(
+            self.page_size_input
         )
         pagination.addWidget(
             self.page_label
@@ -2597,6 +2594,9 @@ class PaginatedTableView(QFrame):
         self.page_label.setText(
             f"Page {self.page}"
         )
+        self.page_size_input.blockSignals(True)
+        self.page_size_input.setValue(self.page_size)
+        self.page_size_input.blockSignals(False)
         self.previous_button.setEnabled(
             self.page > 0
         )
@@ -2718,7 +2718,7 @@ class CoprTable(QObject):
             return
         self.loading = True
         self.fetchStarted.emit()
-        thread = QThread(self)
+        thread = QThread()
         worker = CoprTableFetchWorker(
             self.data_fetch,
             self.page * self.page_size,
@@ -2819,7 +2819,7 @@ class ProjectBuildsFrame(QFrame):
             DELETE_ACTION: "Delete",
             VIEW_JSON_ACTION: "View JSON",
             VIEW_BUILD_ACTION: "View build"
-        }, action = self.copr_action)
+        }, action = self.copr_action, page_size=25)
         layout.addWidget(self.view, 1)
 
 # ============================================================
@@ -3386,28 +3386,15 @@ class ProjectWindow(QMainWindow):
             nonlocal self
             self.project.update(opts)
             worker = UpdateProjectOptionsWorker(self.client, self.project, opts)
-            thread = QThread(self)
-
-            worker.moveToThread(thread)
-            thread.started.connect(worker.run)
-            worker.finished.connect(
-                thread.quit
-            )
-            worker.finished.connect(
-                worker.deleteLater
-            )
-            thread.finished.connect(
-                thread.deleteLater
-            )
-            worker.failed.connect(
-                lambda error: QMessageBox.critical(
+            start_worker(
+                worker,
+                parent=self,
+                error=lambda error: QMessageBox.critical(
                     self,
                     "Update project failed",
                     error,
-                )
+                ),
             )
-            thread.start()
-            add_worker_and_thread(worker, thread)
         def save_project_chroots():
             nonlocal self, save_project_options
             chroots = self.chroot_widgets.chroots()
