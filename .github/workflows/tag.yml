@@ -9,7 +9,6 @@ on:
 jobs:
   copr-build:
     runs-on: ubuntu-latest
-    environment: copr
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +22,7 @@ jobs:
           COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
           COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
           COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
-          COPR_PROJECT: ${{ secrets.PROJECT }}
+          COPR_PROJECT: ${{ secrets.COPR_PROJECT }}
           REPOSITORY: ${{ github.server_url }}/${{ github.repository }}.git
         run: |
           python3 - <<PY
