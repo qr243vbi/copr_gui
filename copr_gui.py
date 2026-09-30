@@ -3818,12 +3818,23 @@ class BuildType(QMainWindow):
 
         self.resize(800, 650)
 
+    def fill_source_data(self, data):
+        from munch import Munch
+        source_package = data.get('source_package', {})
+        if source_package:
+            url = source_package.get('url', {})
+            if url:
+                self.fill_package_data(Munch({'source_dict':{'url':url}, "source_type": 'url'}))
+
     def fill_package_data(self, data):
         data_name = data.get('name', None) or ''
         if self.name is not None:
             self.name.setText(data_name)
+        source_type = data.source_type
         index = self.qml_ids.get(data.source_type, -1000)
         if index == -1000:
+            if source_type != 'url' and self.name is None:
+                self.fill_source_data(data)
             return
         self.combo.setCurrentIndex(index)
 

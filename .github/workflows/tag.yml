@@ -9,7 +9,7 @@ on:
 jobs:
   copr-build:
     runs-on: ubuntu-latest
-
+    environment: copr
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
